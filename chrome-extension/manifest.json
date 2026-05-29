@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Clammy HorizonXI Token",
+  "version": "1.0.0",
+  "description": "Silently captures your horizonxi.com Bearer token and saves it for the ClammyHorizon FFXI addon. No manual steps needed.",
+  "permissions": [
+    "webRequest",
+    "nativeMessaging",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://api.horizonxi.com/*",
+    "*://horizonxi.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://horizonxi.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Clammy Token — click for status"
+  }
+}

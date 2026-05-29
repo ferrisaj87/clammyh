@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clammy Token</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 320px;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      font-family: system-ui, 'Segoe UI', sans-serif;
+      font-size: 13px;
+    }
+
+    header {
+      background: #1a1a2e;
+      border-bottom: 2px solid #e94560;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header .logo {
+      width: 24px; height: 24px;
+      background: #e94560;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 13px; color: #fff; flex-shrink: 0;
+    }
+    header h1 { font-size: 14px; font-weight: 700; color: #fff; }
+    header span { font-size: 11px; color: #94a3b8; margin-left: auto; }
+
+    .status-card {
+      margin: 12px;
+      border-radius: 8px;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+    }
+    .status-card.ok    { background: #052e16; border-color: #16a34a; }
+    .status-card.warn  { background: #1c1007; border-color: #d97706; }
+    .status-card.error { background: #1c0707; border-color: #dc2626; }
+    .status-card.none  { background: #1a1a2e; border-color: #334155; }
+
+    .status-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px;
+    }
+    .dot {
+      width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot.ok    { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+    .dot.warn  { background: #f59e0b; }
+    .dot.error { background: #ef4444; }
+    .dot.none  { background: #475569; }
+
+    .status-label { font-weight: 700; font-size: 13px; }
+    .ok    .status-label { color: #4ade80; }
+    .warn  .status-label { color: #fbbf24; }
+    .error .status-label { color: #f87171; }
+    .none  .status-label { color: #94a3b8; }
+
+    .meta { color: #94a3b8; font-size: 12px; line-height: 1.6; }
+    .meta strong { color: #cbd5e1; }
+
+    .expiry-bar-wrap {
+      margin: 8px 0 4px;
+      height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden;
+    }
+    .expiry-bar { height: 100%; border-radius: 2px; transition: width .3s; }
+
+    .divider { height: 1px; background: #1e293b; margin: 10px 12px; }
+
+    .path-row {
+      margin: 0 12px 10px;
+      background: #1e293b;
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .path-row .path-text {
+      flex: 1; color: #64748b; font-size: 11px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .path-row.saved .path-text { color: #94a3b8; }
+
+    .btn {
+      border: none; border-radius: 5px; cursor: pointer;
+      font-size: 12px; font-weight: 600; padding: 5px 10px;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-copy  { background: #334155; color: #e2e8f0; }
+    .btn-green { background: #16a34a; color: #fff; }
+
+    .native-status {
+      margin: 0 12px 12px;
+      padding: 7px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      background: #1a1a2e;
+      color: #64748b;
+      line-height: 1.5;
+    }
+    .native-status.error { background: #1c0707; color: #f87171; }
+    .native-status.saved { background: #052e16; color: #4ade80; }
+
+    .setup-hint {
+      margin: 0 12px 12px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      background: #1a1a2e;
+      border: 1px solid #334155;
+      font-size: 11px;
+      color: #94a3b8;
+      line-height: 1.6;
+    }
+    .setup-hint a { color: #60a5fa; text-decoration: none; }
+    .setup-hint a:hover { text-decoration: underline; }
+    .setup-hint code {
+      background: #0f172a; padding: 1px 5px; border-radius: 3px;
+      font-family: Consolas, monospace; color: #e2e8f0; font-size: 11px;
+    }
+
+    #copy-feedback {
+      font-size: 11px; color: #4ade80;
+      display: none; margin-left: 4px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">C</div>
+    <h1>Clammy Token</h1>
+    <span id="header-tag">HorizonXI</span>
+  </header>
+
+  <div id="status-card" class="status-card none" style="display:none">
+    <div class="status-row">
+      <div class="dot none" id="dot"></div>
+      <span class="status-label" id="status-label">Loading…</span>
+    </div>
+    <div class="expiry-bar-wrap" id="bar-wrap" style="display:none">
+      <div class="expiry-bar" id="expiry-bar"></div>
+    </div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div id="no-token-card" class="status-card none" style="display:none">
+    <div class="status-row">
+      <div class="dot none"></div>
+      <span class="status-label" style="color:#94a3b8">Waiting for token…</span>
+    </div>
+    <div class="meta">
+      Visit <strong>horizonxi.com</strong> while logged in.<br>
+      The token is captured automatically on the next API request.
+    </div>
+  </div>
+
+  <div class="divider" id="div1" style="display:none"></div>
+
+  <div class="path-row" id="path-row" style="display:none">
+    <span class="path-text" id="path-text">Native host not installed</span>
+    <button class="btn btn-copy" id="copy-btn">Copy token</button>
+    <span id="copy-feedback">Copied!</span>
+  </div>
+
+  <div id="native-status-box" class="native-status" style="display:none"></div>
+
+  <div class="setup-hint" id="setup-hint" style="display:none">
+    <strong>First-time setup:</strong> run <code>native-host\install.ps1</code>
+    from the <code>chrome-extension</code> folder, then paste this extension's
+    ID when prompted.<br>After that, tokens save to disk automatically.
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
