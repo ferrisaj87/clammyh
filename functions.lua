@@ -8,6 +8,44 @@ local colorConverter = imgui.ColorConvertU32ToFloat4;
 
 local BUCKET_COST_GIL = 500;
 
+local ITEM_STACK_SIZE = {
+	['Bibiki slug']               = 12,
+	['Bibiki urchin']             = 12,
+	['Broken willow fishing rod'] = 1,
+	['Coral fragment']            = 12,
+	['Quality crab shell']        = 12,
+	['Crab shell']                = 12,
+	['Elshimo coconut']           = 12,
+	['Elm log']                   = 12,
+	['Fish scales']               = 12,
+	['Goblin armor']              = 12,
+	['Goblin mail']               = 12,
+	['Goblin mask']               = 12,
+	['Hobgoblin bread']           = 12,
+	['Hobgoblin pie']             = 12,
+	['Igneous rock']              = 12,
+	['Jacknife']                  = 12,
+	['Lacquer tree log']          = 12,
+	['Maple log']                 = 12,
+	['Nebimonite']                = 12,
+	['Oxblood']                   = 12,
+	['Pamamas']                   = 12,
+	['Pamtam kelp']               = 12,
+	['Pebble']                    = 99,
+	['Petrified log']             = 12,
+	['Quality pugil scales']      = 12,
+	['Pugil scales']              = 12,
+	['Rock salt']                 = 12,
+	['Seashell']                  = 12,
+	['Shall shell']               = 12,
+	['Titanictus shell']          = 12,
+	['Tropical clam']             = 12,
+	['Turtle shell']              = 12,
+	['Uragnite shell']            = 12,
+	['Vongola clam']              = 12,
+	['White sand']                = 12,
+};
+
 local function findItemDefByName(name)
 	if (name == nil) then
 		return nil;
@@ -1513,6 +1551,11 @@ func.handleChatCommands = function(args, clammy)
         return clammy;
     end
 
+	if (#args >= 2 and args[2]:any('browse')) then
+		clammy.browserIsOpen[1] = not clammy.browserIsOpen[1];
+		return clammy;
+	end
+
     print(chat.header(addon.name):append(chat.message('Invalid command passed, try /clammyh for config menu.')));
     return clammy;
 end
@@ -1950,8 +1993,117 @@ func.renderClammy = function(clammy)
 				end
 			end
 		end
+		imgui.Separator();
+		if (imgui.SmallButton('Browse Items##clammyh_browse_btn')) then
+			clammy.browserIsOpen[1] = not clammy.browserIsOpen[1];
+		end
     end
     imgui.End();
+	return clammy;
+end
+
+func.renderItemBrowser = function(clammy)
+	if (not clammy.browserIsOpen[1]) then
+		return clammy;
+	end
+
+	local sc      = Config.windowScaling[1];
+	local winW    = math.floor(410 * sc);
+	local winH    = math.floor(570 * sc);
+
+	-- Column X positions (absolute within the window content area)
+	local COL_ROUTE = math.floor(162 * sc);
+	local COL_UNIT  = math.floor(208 * sc);
+	local COL_STACK = math.floor(290 * sc);
+
+	local firstUseEver = ImGuiCond_FirstUseEver or 4;
+	imgui.SetNextWindowSize({ winW, winH }, firstUseEver);
+	imgui.SetNextWindowSizeConstraints({ math.floor(320 * sc), math.floor(250 * sc) }, { FLT_MAX, FLT_MAX });
+	imgui.SetNextWindowBgAlpha(0.93);
+
+	if (imgui.Begin('Item Browser##clammyh_browse', clammy.browserIsOpen)) then
+		local normalFont = 1.0 * sc;
+		local labelFont  = 0.80 * sc;
+
+		-- Legend
+		imgui.Text('Route:');
+		imgui.SameLine(0, 6);
+		imgui.TextColored({0.35, 1.0, 0.35, 1.0}, '[V] Vendor');
+		imgui.SameLine(0, 12);
+		imgui.TextColored({1.0, 0.65, 0.1, 1.0}, '[AH] Auction House');
+		imgui.Separator();
+
+		-- Column header labels
+		imgui.SetWindowFontScale(labelFont);
+		imgui.Text('Item Name');
+		imgui.SameLine(); imgui.SetCursorPosX(COL_ROUTE);
+		imgui.Text('Route');
+		imgui.SameLine(); imgui.SetCursorPosX(COL_UNIT);
+		imgui.Text('Per Unit');
+		imgui.SameLine(); imgui.SetCursorPosX(COL_STACK);
+		imgui.Text('Per Stack');
+		imgui.SetWindowFontScale(normalFont);
+		imgui.Separator();
+
+		-- Build sorted copy: AH first (by stack value desc), then Vendor (by stack value desc)
+		local sorted = {};
+		for _, citem in ipairs(Config.items) do
+			sorted[#sorted + 1] = citem;
+		end
+		table.sort(sorted, function(a, b)
+			local aV = a.vendor[1];
+			local bV = b.vendor[1];
+			if (aV ~= bV) then
+				return not aV; -- AH (vendor=false) first
+			end
+			local aVal = (ITEM_STACK_SIZE[a.item] or 12) * a.gil[1];
+			local bVal = (ITEM_STACK_SIZE[b.item] or 12) * b.gil[1];
+			return aVal > bVal;
+		end);
+
+		imgui.BeginChild('##browse_list', {0, 0}, false);
+		local prevGroup = nil;
+		for _, citem in ipairs(sorted) do
+			local isVendor     = citem.vendor[1];
+			local group        = isVendor and 'V' or 'AH';
+			if (prevGroup ~= nil) and (prevGroup ~= group) then
+				imgui.Separator();
+			end
+			prevGroup = group;
+
+			local routeColor, routeLabel;
+			if isVendor then
+				routeColor = {0.35, 1.0, 0.35, 1.0};
+				routeLabel = 'V';
+			else
+				routeColor = {1.0, 0.65, 0.1, 1.0};
+				routeLabel = 'AH';
+			end
+
+			local stackSize = ITEM_STACK_SIZE[citem.item] or 12;
+			local unitGil   = citem.gil[1];
+			local stackGil  = unitGil * stackSize;
+			local dispName  = truncateItemDisplayName(citem.item, 20);
+
+			imgui.TextColored(routeColor, dispName);
+			imgui.SameLine(); imgui.SetCursorPosX(COL_ROUTE);
+			imgui.TextColored(routeColor, routeLabel);
+			imgui.SameLine(); imgui.SetCursorPosX(COL_UNIT);
+			imgui.Text(formatInt(unitGil) .. 'g');
+			imgui.SameLine(); imgui.SetCursorPosX(COL_STACK);
+			if (stackSize == 1) then
+				imgui.TextColored({0.6, 0.6, 0.6, 1.0}, '(no stack)');
+			else
+				imgui.Text(formatInt(stackGil) .. 'g');
+				imgui.SameLine(0, 4);
+				imgui.SetWindowFontScale(labelFont);
+				imgui.TextColored({0.5, 0.5, 0.5, 1.0}, 'x' .. tostring(stackSize));
+				imgui.SetWindowFontScale(normalFont);
+			end
+		end
+		imgui.EndChild();
+	end
+	imgui.End();
 	return clammy;
 end
 

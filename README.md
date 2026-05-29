@@ -22,6 +22,8 @@ If you are updating from a previous version, please delete your old config file 
  `/clammyh reloadah` *Auto-capture + AH refresh: reads token saved by the Chrome extension, fetches live AH prices, rewrites `config/addons/ClammyHorizon/data/ah_prices.json`, and applies values in-game.*
  `/clammyh reloadah local` *Re-read existing `config/addons/ClammyHorizon/data/ah_prices.json` (and overrides) only -- no browser / no API.*
  `/clammyh horizonauth` *Same as `/clammyh reloadah` (legacy alias).*
+ `/clammyh update` *Check GitHub for a newer version and download it if one is available. Reload with `/addon reload clammyh` after updating.*
+ `/clammyh browse` *Open / close the Item Browser popup (shows all items, AH vs Vendor routing, and per-stack values).*
 
 ### Debug
  `/clammyh reset` *Manually clear bucket information*

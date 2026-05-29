@@ -24,12 +24,110 @@ addon.author   = 'Ferris (Original Designers: MathMatic/DrifterX)';
 addon.name     = 'ClammyHorizon';
 addon.desc     = 'Clamming calculator; AH: /clammyh reloadah (Chrome extension captures token automatically). reloadah token | local | unlock.';
 addon.version  = '1.9.2';
+local CURRENT_VERSION = addon.version;
 
 require('common');
 local const = require('constants');
 local func = require('functions');
 local ahpricing = require('ahpricing');
 Settings = require('settings');
+
+--------------------------------------------------------------------
+-- Auto-update  (github.com/ferrisaj87/clammyh)
+--------------------------------------------------------------------
+local _ok_https, _https = pcall(require, 'socket.ssl.https');
+if not _ok_https then _https = nil; end
+
+local _REPO_RAW           = 'https://raw.githubusercontent.com/ferrisaj87/clammyh/master/';
+local _UPDATE_VERSION_URL = _REPO_RAW .. 'clammyh.lua';
+local _addonDir           = ('%saddons\\clammyh\\'):fmt(AshitaCore:GetInstallPath());
+local _UPDATE_FILES = {
+    { url = _REPO_RAW .. 'clammyh.lua',   path = _addonDir .. 'clammyh.lua',   label = 'clammyh.lua'   },
+    { url = _REPO_RAW .. 'functions.lua',  path = _addonDir .. 'functions.lua',  label = 'functions.lua'  },
+    { url = _REPO_RAW .. 'constants.lua',  path = _addonDir .. 'constants.lua',  label = 'constants.lua'  },
+    { url = _REPO_RAW .. 'ahpricing.lua',  path = _addonDir .. 'ahpricing.lua',  label = 'ahpricing.lua'  },
+};
+
+local _updateMsgDelay = nil;
+local _latestVersion  = nil;
+
+local function _clammyEcho(msg)
+    AshitaCore:GetChatManager():QueueCommand(1, '/echo [ClammyHorizon] ' .. tostring(msg));
+end
+
+local function _parseVer(s)
+    local t = {};
+    for n in tostring(s):gmatch('%d+') do t[#t+1] = tonumber(n); end
+    return t;
+end
+
+local function _verGt(a, b)
+    local pa, pb = _parseVer(a), _parseVer(b);
+    for i = 1, math.max(#pa, #pb) do
+        local x, y = pa[i] or 0, pb[i] or 0;
+        if x > y then return true; end
+        if x < y then return false; end
+    end
+    return false;
+end
+
+local function _fetchRemoteVersion()
+    if (_https == nil) then return nil; end
+    local ok, body, code = pcall(function()
+        return _https.request(_UPDATE_VERSION_URL .. '?t=' .. os.time());
+    end);
+    if (not ok) or (code ~= 200) or (not body) then return nil; end
+    return (body:match("addon%.version%s*=%s*'([^']+)'")
+         or body:match('addon%.version%s*=%s*"([^"]+)"'));
+end
+
+local function _checkForUpdate()
+    local remote = _fetchRemoteVersion();
+    if (not remote) then return; end
+    if _verGt(remote, CURRENT_VERSION) then
+        _latestVersion  = remote;
+        _updateMsgDelay = os.clock() + 2;
+    end
+end
+
+local function _performUpdate()
+    if (_https == nil) then
+        _clammyEcho('Cannot update: socket.ssl.https is not available.');
+        return;
+    end
+    _clammyEcho('Checking for updates...');
+    local remote = _fetchRemoteVersion();
+    if (not remote) then
+        _clammyEcho('Could not reach GitHub to check for updates.');
+        return;
+    end
+    if not _verGt(remote, CURRENT_VERSION) then
+        _clammyEcho('Already up to date. (v' .. CURRENT_VERSION .. ')');
+        return;
+    end
+    _clammyEcho('Downloading v' .. remote .. '...');
+    for _, f in ipairs(_UPDATE_FILES) do
+        local fok, fbody, fcode = pcall(function()
+            return _https.request(f.url .. '?t=' .. os.time());
+        end);
+        if (not fok) or (fcode ~= 200) or (not fbody) or (fbody == '') then
+            _clammyEcho('Failed to download ' .. f.label .. ' (HTTP ' .. tostring(fcode) .. '). Update aborted.');
+            return;
+        end
+        local out = io.open(f.path, 'wb');
+        if (out == nil) then
+            _clammyEcho('Failed to write ' .. f.label .. '. Update aborted.');
+            return;
+        end
+        out:write(fbody);
+        out:close();
+        _clammyEcho('Updated ' .. f.label .. '.');
+    end
+    _updateMsgDelay = nil;
+    _latestVersion  = nil;
+    _clammyEcho('Update to v' .. remote .. ' complete! Type: /addon reload clammyh');
+end
+--------------------------------------------------------------------
 
 
 local defaultConfig = T{
@@ -101,6 +199,7 @@ local clammy = T{
 	bucketIsBroke = false,
 	bucketShouldBeTurnedIn = false,
 	editorIsOpen = T{ false, },
+	browserIsOpen = T{ false, },
 	hasHQLegs = false,
 	hasHQBody = false,
 	bodyItemId = 0,
@@ -171,6 +270,7 @@ ashita.events.register('load', 'load_cb', function()
 		end
 	end
 
+	pcall(_checkForUpdate);
 end);
 
 --------------------------------------------------------------------
@@ -190,6 +290,11 @@ ashita.events.register('command', 'command_cb', function (e)
 
     -- Block all related commands..
     e.blocked = true;
+
+	if (#args >= 2 and args[2]:any('update')) then
+		_performUpdate();
+		return;
+	end
 
 	clammy = func.handleChatCommands(args, clammy);
 end);
@@ -211,10 +316,17 @@ end);
 * desc : Event called when the Direct3D device is presenting a scene.
 --]]
 ashita.events.register('d3d_present', 'present_cb', function ()
+	if (_updateMsgDelay ~= nil) and (os.clock() >= _updateMsgDelay) then
+		_clammyEcho(('Update available!  Current: v%s  |  Latest: v%s  --  Type /clammyh update to install.'):fmt(
+			CURRENT_VERSION, tostring(_latestVersion)));
+		_updateMsgDelay = nil;
+	end
+
 	clammy = func.pollHorizonBackgroundHelper(clammy);
 	if (clammy.editorIsOpen[1] == true) then
 		clammy = func.renderEditor(clammy);
 	end
 
+	clammy = func.renderItemBrowser(clammy);
 	clammy = func.renderClammy(clammy);
 end);
