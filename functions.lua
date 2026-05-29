@@ -6,23 +6,28 @@ local imgui = require('imgui');
 local json  = require('libs.json');
 local ffi   = require('ffi');
 local d3d8  = require('d3d8');
+require('d3d8.d3dx8');
 local func = T{};
 local colorConverter = imgui.ColorConvertU32ToFloat4;
 
 -- Arrow textures for AH price change indicator (lazy-loaded on first render).
 local _arrowTextures = nil;
 local function _loadArrowTextures()
-	local device = d3d8.get_device();
-	if (device == nil) then return nil; end
-	local imgDir = ('%saddons/clammyh/images/'):fmt(AshitaCore:GetInstallPath());
+	local ok, device = pcall(d3d8.get_device);
+	if (not ok) or (device == nil) then return nil; end
+	local imgDir = ('%saddons\\clammyh\\images\\'):fmt(AshitaCore:GetInstallPath():gsub('/', '\\'));
 	local function loadTex(filename)
-		local fullPath = (imgDir .. filename):gsub('/', '\\');
+		local fullPath = imgDir .. filename;
 		local ptr = ffi.new('IDirect3DTexture8*[1]');
 		local res = ffi.C.D3DXCreateTextureFromFileA(device, fullPath, ptr);
 		if (res ~= ffi.C.S_OK) then return nil; end
-		return d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
+		local tex = ffi.new('IDirect3DTexture8*', ptr[0]);
+		d3d8.gc_safe_release(tex);
+		return tex;
 	end
-	return { up = loadTex('Up.png'), down = loadTex('Down.png') };
+	local okU, up   = pcall(loadTex, 'Up.png');
+	local okD, down = pcall(loadTex, 'Down.png');
+	return { up = okU and up or nil, down = okD and down or nil };
 end
 
 local BUCKET_COST_GIL = 500;
@@ -2070,6 +2075,10 @@ local _browserAhPrevCache = nil;
 func.resetBrowserAhCache = function()
 	_browserAhCache = nil;
 	_browserAhPrevCache = nil;
+end
+
+func.releaseArrowTextures = function()
+	_arrowTextures = nil;
 end
 
 local function _clammyAhDataPath()

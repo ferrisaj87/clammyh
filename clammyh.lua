@@ -21,7 +21,7 @@
 --]]
 
 addon.author   = 'Ferris (Original Designers: MathMatic/DrifterX)';
-addon.name     = 'ClammyHorizon';
+addon.name     = 'clammyh';
 addon.desc     = 'Clamming calculator; AH: /clammyh reloadah (Chrome extension captures token automatically). reloadah token | local | unlock.';
 addon.version  = '1.9.3';
 local CURRENT_VERSION = addon.version;
@@ -31,6 +31,16 @@ local const = require('constants');
 local func = require('functions');
 local ahpricing = require('ahpricing');
 Settings = require('settings');
+
+-- One-time migration: copy settings from old 'ClammyHorizon' config dir to new 'clammyh' dir.
+do
+    local _base  = AshitaCore:GetInstallPath():gsub('/', '\\');
+    local _old   = _base .. 'config\\addons\\ClammyHorizon';
+    local _new   = _base .. 'config\\addons\\clammyh';
+    if (ashita.fs.exists(_old) == true) and (ashita.fs.exists(_new) ~= true) then
+        os.execute('cmd /c xcopy /s /e /i /y "' .. _old .. '" "' .. _new .. '" >nul 2>&1');
+    end
+end
 
 --------------------------------------------------------------------
 -- Auto-update  (github.com/ferrisaj87/clammyh)
@@ -276,6 +286,7 @@ end);
 
 --------------------------------------------------------------------
 ashita.events.register('unload', 'unload_cb', function()
+	func.releaseArrowTextures();
 	if (Config.sessionLog[1] == true) then
 		clammy = func.writeSessionReport(clammy, 'unload');
 	end
