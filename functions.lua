@@ -3,6 +3,7 @@ require('common');
 local ahpricing = require('ahpricing');
 local chat = require('chat');
 local imgui = require('imgui');
+local json  = require('libs.json');
 local func = T{};
 local colorConverter = imgui.ColorConvertU32ToFloat4;
 
@@ -44,6 +45,45 @@ local ITEM_STACK_SIZE = {
 	['Uragnite shell']            = 12,
 	['Vongola clam']              = 12,
 	['White sand']                = 12,
+};
+
+-- NPC vendor prices (gil/unit) — items that NPCs won't buy have 0.
+local ITEM_VENDOR_GIL = {
+	['Bibiki slug']               = 9,
+	['Bibiki urchin']             = 750,
+	['Broken willow fishing rod'] = 0,
+	['Coral fragment']            = 1750,
+	['Quality crab shell']        = 3125,
+	['Crab shell']                = 371,
+	['Elshimo coconut']           = 44,
+	['Elm log']                   = 384,
+	['Fish scales']               = 23,
+	['Goblin armor']              = 0,
+	['Goblin mail']               = 0,
+	['Goblin mask']               = 0,
+	['Hobgoblin bread']           = 90,
+	['Hobgoblin pie']             = 150,
+	['Igneous rock']              = 175,
+	['Jacknife']                  = 53,
+	['Lacquer tree log']          = 3500,
+	['Maple log']                 = 15,
+	['Nebimonite']                = 52,
+	['Oxblood']                   = 13250,
+	['Pamamas']                   = 20,
+	['Pamtam kelp']               = 8,
+	['Pebble']                    = 1,
+	['Petrified log']             = 2150,
+	['Quality pugil scales']      = 260,
+	['Pugil scales']              = 23,
+	['Rock salt']                 = 3,
+	['Seashell']                  = 33,
+	['Shall shell']               = 293,
+	['Titanictus shell']          = 350,
+	['Tropical clam']             = 5100,
+	['Turtle shell']              = 1200,
+	['Uragnite shell']            = 1455,
+	['Vongola clam']              = 192,
+	['White sand']                = 250,
 };
 
 local function findItemDefByName(name)
@@ -1290,6 +1330,7 @@ local function applyHorizonHelperResultToGame()
 	end
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
+		_browserAhCache = nil;
 		print(chat.header(addon.name):append(chat.message(('Clammy: Successfully updated AH pricing (%d items).'):fmt(n))));
 		if (Config.ahPricesGeneratedUtc ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= '') then
 			print(chat.header(addon.name):append(chat.message(('Generated (UTC): %s'):fmt(Config.ahPricesGeneratedUtc[1]))));
@@ -1404,6 +1445,7 @@ end
 func.logAhPricingApplyOutcome = function()
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
+		_browserAhCache = nil;
 		if (ahpricing.OVERRIDES_ONLY_BASE == true) then
 			print(chat.header(addon.name):append(chat.message(('AH pricing: applied %d entries (no ah_prices.json; overrides file only).'):fmt(n))));
 		else
@@ -1551,7 +1593,7 @@ func.handleChatCommands = function(args, clammy)
         return clammy;
     end
 
-	if (#args >= 2 and args[2]:any('browse')) then
+	if (#args >= 2 and (args[2]:any('browse') or args[2]:any('itemstatus'))) then
 		clammy.browserIsOpen[1] = not clammy.browserIsOpen[1];
 		return clammy;
 	end
@@ -1879,11 +1921,11 @@ func.renderClammy = function(clammy)
 			end
 			imgui.Text("Lost to sea (est.): " .. formatInt(clammy.sessionBreakLossGil or 0));
 			imgui.SameLine(0, 8);
-			if (imgui.Button("Open log##lostSeaLog")) then
-				local p = clammy.sessionReportPath;
-				if (p ~= nil) and (p ~= "") then
-					p = p:gsub("/", "\\");
-					os.execute('cmd /c start "" "' .. p:gsub('"', '""') .. '"');
+			if (imgui.Button("Open logs##lostSeaLog")) then
+				local dir = clammy.fileDir;
+				if (dir ~= nil) and (dir ~= "") then
+					dir = dir:gsub("/", "\\");
+					os.execute('cmd /c start "" "' .. dir:gsub('"', '""') .. '"');
 				end
 			end
 			if (#lostNames > 0) then
@@ -2002,23 +2044,111 @@ func.renderClammy = function(clammy)
 	return clammy;
 end
 
+-- AH price cache for item browser (lazy-loaded from ah_prices.json).
+local _browserAhCache = nil;
+
+func.resetBrowserAhCache = function()
+	_browserAhCache = nil;
+end
+
+local function _clammyAhDataPath()
+	return ('%sconfig/addons/ClammyHorizon/data/ah_prices.json'):fmt(AshitaCore:GetInstallPath());
+end
+
+local function _loadBrowserAhCache()
+	local path = _clammyAhDataPath();
+	local fsOk = (ashita.fs ~= nil) and (ashita.fs.exists ~= nil);
+	if (not fsOk) or (ashita.fs.exists(path) ~= true) then
+		_browserAhCache = {};
+		return;
+	end
+	local f = io.open(path, 'r');
+	if (f == nil) then _browserAhCache = {}; return; end
+	local body = f:read('*a'); f:close();
+	if (body == nil) or (body == '') then _browserAhCache = {}; return; end
+	local ok, data = pcall(json.decode, body);
+	if (not ok) or (type(data) ~= 'table') or (type(data.items) ~= 'table') then
+		_browserAhCache = {};
+		return;
+	end
+	_browserAhCache = data.items;
+end
+
+-- Returns a tooltip string explaining the routing decision for an item.
+local function _browserRouteTooltip(row)
+	if (row == nil) then
+		return 'No AH data -- run /clammyh reloadah to fetch prices.';
+	end
+	local reason = row.route_reason or '';
+	local liq    = row.liquidity or '';
+	local rate   = row.estimated_sales_rate_per_day;
+	local pct    = row.pct_gain_ah_over_vendor;
+	local sc     = row.sample_count or 0;
+	local lines  = {};
+
+	if (reason == 'npc_ah_below_vendor') then
+		lines[#lines+1] = 'AH net is below NPC vendor price.';
+		if (type(pct) == 'number') then
+			lines[#lines+1] = ('AH pays %.1f%% less than vendor.'):fmt(math.abs(pct));
+		end
+	elseif (reason == 'npc_liquidity') then
+		if (liq == 'below_min_ah_net') then
+			lines[#lines+1] = 'AH stack price is below minimum listing threshold (900g).';
+			lines[#lines+1] = 'Not worth the listing time -- vendor instead.';
+		elseif (liq == 'slow_market_liquidity') then
+			lines[#lines+1] = 'Slow-selling market -- items may sit on AH.';
+			if (type(rate) == 'number') then
+				lines[#lines+1] = ('Est. ~%.2f sales/day.'):fmt(rate);
+			end
+		else
+			lines[#lines+1] = 'Liquidity too low for reliable AH selling.';
+		end
+		if (type(pct) == 'number') and (pct > 0) then
+			lines[#lines+1] = ('AH offers +%.1f%% vs vendor, but risk outweighs reward.'):fmt(pct);
+		end
+	elseif (row.prefer_vendor == false) then
+		lines[#lines+1] = 'Routed to AH -- better returns than vendor.';
+		if (type(pct) == 'number') and (pct > 0) then
+			lines[#lines+1] = ('AH returns +%.1f%% more than vendor.'):fmt(pct);
+		end
+		if (type(rate) == 'number') then
+			lines[#lines+1] = ('Est. ~%.2f sales/day.'):fmt(rate);
+		end
+	else
+		lines[#lines+1] = (reason ~= '') and ('Route: ' .. reason) or 'No routing detail available.';
+	end
+	if (sc > 0) then
+		lines[#lines+1] = ('Based on %d recent sales.'):fmt(sc);
+	end
+	return table.concat(lines, '\n');
+end
+
 func.renderItemBrowser = function(clammy)
 	if (not clammy.browserIsOpen[1]) then
 		return clammy;
 	end
 
-	local sc      = Config.windowScaling[1];
-	local winW    = math.floor(410 * sc);
-	local winH    = math.floor(570 * sc);
+	if (_browserAhCache == nil) then
+		_loadBrowserAhCache();
+	end
 
-	-- Column X positions (absolute within the window content area)
-	local COL_ROUTE = math.floor(162 * sc);
-	local COL_UNIT  = math.floor(208 * sc);
-	local COL_STACK = math.floor(290 * sc);
+	local sc          = Config.windowScaling[1];
+	local winW        = math.floor(530 * sc);
+	local winH        = math.floor(570 * sc);
+	local COL_ROUTE   = math.floor(162 * sc);
+	local COL_VSTACK  = math.floor(215 * sc);
+	local COL_AHSTACK = math.floor(345 * sc);
+	local COL_HELP    = math.floor(465 * sc);
+
+	local VEN_COLOR  = {0.35, 1.0, 0.35, 1.0};
+	local AH_COLOR   = {1.0, 0.65, 0.1, 1.0};
+	local GOOD_COLOR = {1.0, 0.92, 0.35, 1.0};
+	local DIM_COLOR  = {0.48, 0.48, 0.48, 1.0};
+	local HINT_COLOR = {0.45, 0.72, 1.0, 0.85};
 
 	local firstUseEver = ImGuiCond_FirstUseEver or 4;
 	imgui.SetNextWindowSize({ winW, winH }, firstUseEver);
-	imgui.SetNextWindowSizeConstraints({ math.floor(320 * sc), math.floor(250 * sc) }, { FLT_MAX, FLT_MAX });
+	imgui.SetNextWindowSizeConstraints({ math.floor(380 * sc), math.floor(250 * sc) }, { FLT_MAX, FLT_MAX });
 	imgui.SetNextWindowBgAlpha(0.93);
 
 	if (imgui.Begin('Item Browser##clammyh_browse', clammy.browserIsOpen)) then
@@ -2026,26 +2156,26 @@ func.renderItemBrowser = function(clammy)
 		local labelFont  = 0.80 * sc;
 
 		-- Legend
-		imgui.Text('Route:');
-		imgui.SameLine(0, 6);
-		imgui.TextColored({0.35, 1.0, 0.35, 1.0}, '[V] Vendor');
+		imgui.TextColored(VEN_COLOR, '[V] Vendor');
 		imgui.SameLine(0, 12);
-		imgui.TextColored({1.0, 0.65, 0.1, 1.0}, '[AH] Auction House');
+		imgui.TextColored(AH_COLOR, '[AH] Auction House');
+		imgui.SameLine(0, 12);
+		imgui.TextColored(HINT_COLOR, '(?) AH details');
 		imgui.Separator();
 
-		-- Column header labels
+		-- Column headers
 		imgui.SetWindowFontScale(labelFont);
 		imgui.Text('Item Name');
 		imgui.SameLine(); imgui.SetCursorPosX(COL_ROUTE);
 		imgui.Text('Route');
-		imgui.SameLine(); imgui.SetCursorPosX(COL_UNIT);
-		imgui.Text('Per Unit');
-		imgui.SameLine(); imgui.SetCursorPosX(COL_STACK);
-		imgui.Text('Per Stack');
+		imgui.SameLine(); imgui.SetCursorPosX(COL_VSTACK);
+		imgui.Text('Stack (V)');
+		imgui.SameLine(); imgui.SetCursorPosX(COL_AHSTACK);
+		imgui.Text('Stack (AH)');
 		imgui.SetWindowFontScale(normalFont);
 		imgui.Separator();
 
-		-- Build sorted copy: AH first (by stack value desc), then Vendor (by stack value desc)
+		-- Sort: AH items first (by stack value desc), then Vendor (by stack value desc)
 		local sorted = {};
 		for _, citem in ipairs(Config.items) do
 			sorted[#sorted + 1] = citem;
@@ -2053,9 +2183,7 @@ func.renderItemBrowser = function(clammy)
 		table.sort(sorted, function(a, b)
 			local aV = a.vendor[1];
 			local bV = b.vendor[1];
-			if (aV ~= bV) then
-				return not aV; -- AH (vendor=false) first
-			end
+			if (aV ~= bV) then return not aV; end
 			local aVal = (ITEM_STACK_SIZE[a.item] or 12) * a.gil[1];
 			local bVal = (ITEM_STACK_SIZE[b.item] or 12) * b.gil[1];
 			return aVal > bVal;
@@ -2064,41 +2192,57 @@ func.renderItemBrowser = function(clammy)
 		imgui.BeginChild('##browse_list', {0, 0}, false);
 		local prevGroup = nil;
 		for _, citem in ipairs(sorted) do
-			local isVendor     = citem.vendor[1];
-			local group        = isVendor and 'V' or 'AH';
+			local isVendor = citem.vendor[1];
+			local group    = isVendor and 'V' or 'AH';
 			if (prevGroup ~= nil) and (prevGroup ~= group) then
 				imgui.Separator();
 			end
 			prevGroup = group;
 
-			local routeColor, routeLabel;
-			if isVendor then
-				routeColor = {0.35, 1.0, 0.35, 1.0};
-				routeLabel = 'V';
-			else
-				routeColor = {1.0, 0.65, 0.1, 1.0};
-				routeLabel = 'AH';
-			end
+			local routeColor = isVendor and VEN_COLOR or AH_COLOR;
+			local routeLabel = isVendor and 'V' or 'AH';
+			local stackSize  = ITEM_STACK_SIZE[citem.item] or 12;
+			local vendorUnit = ITEM_VENDOR_GIL[citem.item] or 0;
+			local vStack     = vendorUnit * stackSize;
+			local ahRow      = (_browserAhCache ~= nil) and _browserAhCache[citem.item] or nil;
+			local ahNetUnit  = (ahRow ~= nil) and ahRow.ah_net_per_unit or nil;
+			local ahStack    = (ahNetUnit ~= nil) and (ahNetUnit * stackSize) or nil;
+			local ahBetter   = (ahStack ~= nil) and (vendorUnit > 0) and (ahStack > vStack);
+			local tooltip    = _browserRouteTooltip(ahRow);
+			local dispName   = truncateItemDisplayName(citem.item, 20);
 
-			local stackSize = ITEM_STACK_SIZE[citem.item] or 12;
-			local unitGil   = citem.gil[1];
-			local stackGil  = unitGil * stackSize;
-			local dispName  = truncateItemDisplayName(citem.item, 20);
-
+			-- Name
 			imgui.TextColored(routeColor, dispName);
 			imgui.SameLine(); imgui.SetCursorPosX(COL_ROUTE);
+			-- Route badge
 			imgui.TextColored(routeColor, routeLabel);
-			imgui.SameLine(); imgui.SetCursorPosX(COL_UNIT);
-			imgui.Text(formatInt(unitGil) .. 'g');
-			imgui.SameLine(); imgui.SetCursorPosX(COL_STACK);
-			if (stackSize == 1) then
-				imgui.TextColored({0.6, 0.6, 0.6, 1.0}, '(no stack)');
+			imgui.SameLine(); imgui.SetCursorPosX(COL_VSTACK);
+			-- Stack (V)
+			if (vendorUnit == 0) then
+				imgui.TextColored(DIM_COLOR, '--');
 			else
-				imgui.Text(formatInt(stackGil) .. 'g');
-				imgui.SameLine(0, 4);
+				imgui.Text(formatInt(vStack) .. 'g');
+			end
+			imgui.SameLine(); imgui.SetCursorPosX(COL_AHSTACK);
+			-- Stack (AH): gold when better than vendor, dim otherwise
+			if (ahStack == nil) then
+				imgui.TextColored(DIM_COLOR, 'n/a');
+			elseif (ahBetter) then
+				imgui.TextColored(GOOD_COLOR, formatInt(ahStack) .. 'g');
+			else
+				imgui.TextColored(DIM_COLOR, formatInt(ahStack) .. 'g');
+			end
+			-- (?) tooltip hint — only when AH data exists
+			if (ahRow ~= nil) then
+				imgui.SameLine(); imgui.SetCursorPosX(COL_HELP);
 				imgui.SetWindowFontScale(labelFont);
-				imgui.TextColored({0.5, 0.5, 0.5, 1.0}, 'x' .. tostring(stackSize));
+				imgui.TextColored(HINT_COLOR, '(?)');
 				imgui.SetWindowFontScale(normalFont);
+				if (imgui.IsItemHovered()) then
+					imgui.BeginTooltip();
+					for line in tooltip:gmatch('[^\n]+') do imgui.Text(line); end
+					imgui.EndTooltip();
+				end
 			end
 		end
 		imgui.EndChild();

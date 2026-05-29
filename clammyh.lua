@@ -246,6 +246,7 @@ Settings.register('settings', 'clammy_pricing_resync', function(s)
 	Config = s;
 	ahpricing.applyFromFile(s);
 	clammy.items = Config.items;
+	func.resetBrowserAhCache();
 end);
 
 --------------------------------------------------------------------

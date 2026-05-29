@@ -341,7 +341,7 @@ if ($NoApi -ne $true -and $anySlug -and -not [string]::IsNullOrWhiteSpace($tok))
         if ($vG -le 0) { $rR2='auction_no_vendor_price' }
         else {
           $dG2=[double]($ahN-$vG); $pG2=100.0*$dG2/[math]::Max([double]$vG,1.0); $fN2=$false
-          if (($man2 -gt 0) -and ($ahN -le $man2))                                                                     { $fN2=$true; $lN2='below_min_ah_net' }
+          if (($man2 -gt 0) -and (($ahN * $ups) -le $man2))                                                           { $fN2=$true; $lN2='below_min_ah_net' }
           if ((-not $fN2) -and ($pG2 -le $lpc2))                                                                       { $fN2=$true; $lN2='tight_margin_vs_npc' }
           if ((-not $fN2) -and ($lgc2 -gt 0) -and ($dG2 -le $lgc2) -and ($pG2 -le ($lpc2*1.75)))                     { $fN2=$true; $lN2='small_gil_gap_vs_npc' }
           if ((-not $fN2) -and ($null -ne $spd2) -and ($spd2 -lt $lsr2) -and ($pG2 -lt $lsb2))                       { $fN2=$true; $lN2='slow_market_liquidity' }
@@ -351,7 +351,7 @@ if ($NoApi -ne $true -and $anySlug -and -not [string]::IsNullOrWhiteSpace($tok))
       # Display immediately
       $pStr2  = if ($null -ne $ahN) { '{0:N0}g' -f $ahN } else { 'no data' }
       $vStr2  = if ($vG -gt 0) { '(npc {0:N0}g)' -f $vG } else { '' }
-      $rTag2  = if ($lN2 -eq 'below_min_ah_net') { ('NPC (AH < {0}g min)' -f $man2) } else {
+      $rTag2  = if ($lN2 -eq 'below_min_ah_net') { ('NPC (AH stack < {0}g min)' -f $man2) } else {
         switch ($rR2) {
           'auction_house'           { 'AH' }; 'auction_no_vendor_price' { 'AH' }
           'npc_liquidity'           { 'NPC (low margin)' }; 'npc_ah_below_vendor' { 'NPC (AH < vendor)' }
@@ -469,7 +469,7 @@ foreach ($entry in $list) {
         $deltaGil = [double]($ahNetPerUnit - $vendorGil)
         $pctGain = 100.0 * $deltaGil / [math]::Max([double]$vendorGil, 1.0)
         $forceNpc = $false
-        if (($minAhNet -gt 0) -and ($ahNetPerUnit -le $minAhNet))                                                                          { $forceNpc=$true; $liquidityNote='below_min_ah_net' }
+        if (($minAhNet -gt 0) -and (($ahNetPerUnit * $unitsPerSale) -le $minAhNet))                                                                    { $forceNpc=$true; $liquidityNote='below_min_ah_net' }
         if ((-not $forceNpc) -and ($pctGain -le $liqPctCap))                                                                               { $forceNpc=$true; $liquidityNote='tight_margin_vs_npc' }
         if ((-not $forceNpc) -and ($liqGilGapCap -gt 0) -and ($deltaGil -le $liqGilGapCap) -and ($pctGain -le ($liqPctCap * 1.75)))       { $forceNpc=$true; $liquidityNote='small_gil_gap_vs_npc' }
         if ((-not $forceNpc) -and ($null -ne $salesPerDayEst) -and ($salesPerDayEst -lt $liqSlowMinRate) -and ($pctGain -lt $liqSlowBypass)) { $forceNpc=$true; $liquidityNote='slow_market_liquidity' }
@@ -479,7 +479,7 @@ foreach ($entry in $list) {
     if (-not [string]::IsNullOrWhiteSpace($slug)) {
       $priceStr  = if ($null -ne $ahNetPerUnit) { '{0:N0}g' -f $ahNetPerUnit } else { 'no data' }
       $vendorStr = if ($vendorGil -gt 0) { '(npc {0:N0}g)' -f $vendorGil } else { '' }
-      $routeTag  = if ($liquidityNote -eq 'below_min_ah_net') { ('NPC (AH < {0}g min)' -f $minAhNet) } else {
+      $routeTag  = if ($liquidityNote -eq 'below_min_ah_net') { ('NPC (AH stack < {0}g min)' -f $minAhNet) } else {
         switch ($routeReason) {
           'auction_house'           { 'AH' }; 'auction_no_vendor_price' { 'AH' }
           'npc_liquidity'           { 'NPC (low margin)' }; 'npc_ah_below_vendor' { 'NPC (AH < vendor)' }
