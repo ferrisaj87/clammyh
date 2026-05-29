@@ -180,7 +180,6 @@ local constants = T{
         { item = "Coral fragment",			    weight = 6,	    gil = T{1750}, 	vendor = {true},    rarity = T{0.0119814870885419},  },
         { item = "Quality crab shell",	        weight = 6,	    gil = T{3125}, 	vendor = {true},    rarity = T{0.0051040269907868}, }, --Note: For some reason using "High-quality" doesn't register properly, leave as "Quality" for the time being
         { item = "Crab shell",				    weight = 6,	    gil = T{371}, 	vendor = {true},    rarity = T{0.0245252822353908},  },  --Make sure HQ version is listed above NQ for proper registering of item
-        { item = "Elshimo coconut",             weight = 6,     gil = T{44},    vendor = {true},    rarity = T{0.0000000000000000},  },
         { item = "Elm log", 					weight = 6,	    gil = T{384}, 	vendor = {false},   rarity = T{0.0056663350490938}, },
         { item = "Fish scales",				    weight = 3,	    gil = T{23}, 	vendor = {true},    rarity = T{0.0460227518491284},  },
         { item = "Goblin armor",				weight = 6,	    gil = T{0}, 	vendor = {false},   rarity = T{0.0214542151477140},  },   --Based on estimated AH value
@@ -188,13 +187,11 @@ local constants = T{
         { item = "Goblin mask", 				weight = 6,	    gil = T{0}, 	vendor = {false},   rarity = T{0.0221030321380683},  },  --Based on estimated AH value
         { item = "Hobgoblin bread", 			weight = 6,	    gil = T{90}, 	vendor = {true},    rarity = T{0.0235736839828712},  },
         { item = "Hobgoblin pie", 			    weight = 6,	    gil = T{150}, 	vendor = {true},    rarity = T{0.0241792465072019},  },
-        { item = "Igneous rock", 				weight = 35,	gil = T{175}, 	vendor = {true},    rarity = T{0.0000000000000000},  },
         { item = "Jacknife", 					weight = 11,	gil = T{53}, 	vendor = {true},    rarity = T{0.0922617760283749},  },
         { item = "Lacquer tree log", 			weight = 6,	    gil = T{3500}, 	vendor = {false},   rarity = T{0.0042389376703145}, },
         { item = "Maple log", 				    weight = 6,	    gil = T{15}, 	vendor = {true},    rarity = T{0.0147065184480298},  },
         { item = "Nebimonite", 				    weight = 6,	    gil = T{52}, 	vendor = {true},    rarity = T{0.0247415545655089},  },
         { item = "Oxblood", 					weight = 6,	    gil = T{13250}, vendor = {true},    rarity = T{0.0044552100004325}, },
-        { item = "Pamamas", 					weight = 6,	    gil = T{20}, 	vendor = {true},    rarity = T{0.0000000000000000},  },
         { item = "Pamtam kelp", 				weight = 6,	    gil = T{8}, 	vendor = {true},    rarity = T{0.0621566676759375},  },
         { item = "Pebble", 					    weight = 7,	    gil = T{1}, 	vendor = {true},    rarity = T{0.1969808382715520},   },
         { item = "Petrified log", 			    weight = 6,	    gil = T{2150}, 	vendor = {true},    rarity = T{0.0049310091266923}, },
@@ -218,7 +215,6 @@ local constants = T{
         { item = "Coral fragment",			    weight = 6,     rarity = T{0.007},               },
         { item = "Quality crab shell",	        weight = 6,     rarity = T{0.003},               },
         { item = "Crab shell",				    weight = 6,     rarity = T{0.023},               },
-        { item = "Elshimo coconut",             weight = 6,     rarity = T{0},                   },
         { item = "Elm log", 					weight = 6,     rarity = T{0.002},               },
         { item = "Fish scales",				    weight = 3,     rarity = T{0.037},               },
         { item = "Goblin armor",				weight = 6,     rarity = T{0.019},               },
@@ -226,13 +222,11 @@ local constants = T{
         { item = "Goblin mask", 				weight = 6,     rarity = T{0.022},               },
         { item = "Hobgoblin bread", 			weight = 6,     rarity = T{0.023},               },
         { item = "Hobgoblin pie", 			    weight = 6,     rarity = T{0.027},               },
-        { item = "Igneous rock", 				weight = 35,    rarity = T{0},                   },
         { item = "Jacknife", 					weight = 11,    rarity = T{0.116},               },
         { item = "Lacquer tree log", 			weight = 6,     rarity = T{0.002},               },
         { item = "Maple log", 				    weight = 6,     rarity = T{0.013},               },
         { item = "Nebimonite", 				    weight = 6,     rarity = T{0.023},               },
         { item = "Oxblood", 					weight = 6,     rarity = T{0.003},               },
-        { item = "Pamamas", 					weight = 6,     rarity = T{0},                   },
         { item = "Pamtam kelp", 				weight = 6,     rarity = T{0.062},               },
         { item = "Pebble", 					    weight = 7,     rarity = T{0.223},               },
         { item = "Petrified log", 			    weight = 6,     rarity = T{0.002},               },

@@ -39,7 +39,6 @@ local ITEM_STACK_SIZE = {
 	['Coral fragment']            = 12,
 	['Quality crab shell']        = 12,
 	['Crab shell']                = 12,
-	['Elshimo coconut']           = 12,
 	['Elm log']                   = 12,
 	['Fish scales']               = 12,
 	['Goblin armor']              = 12,
@@ -47,13 +46,11 @@ local ITEM_STACK_SIZE = {
 	['Goblin mask']               = 12,
 	['Hobgoblin bread']           = 12,
 	['Hobgoblin pie']             = 12,
-	['Igneous rock']              = 12,
 	['Jacknife']                  = 12,
 	['Lacquer tree log']          = 12,
 	['Maple log']                 = 12,
 	['Nebimonite']                = 12,
 	['Oxblood']                   = 12,
-	['Pamamas']                   = 12,
 	['Pamtam kelp']               = 12,
 	['Pebble']                    = 99,
 	['Petrified log']             = 12,
@@ -78,7 +75,6 @@ local ITEM_VENDOR_GIL = {
 	['Coral fragment']            = 1750,
 	['Quality crab shell']        = 3125,
 	['Crab shell']                = 371,
-	['Elshimo coconut']           = 44,
 	['Elm log']                   = 384,
 	['Fish scales']               = 23,
 	['Goblin armor']              = 0,
@@ -86,13 +82,11 @@ local ITEM_VENDOR_GIL = {
 	['Goblin mask']               = 0,
 	['Hobgoblin bread']           = 90,
 	['Hobgoblin pie']             = 150,
-	['Igneous rock']              = 175,
 	['Jacknife']                  = 53,
 	['Lacquer tree log']          = 3500,
 	['Maple log']                 = 15,
 	['Nebimonite']                = 52,
 	['Oxblood']                   = 13250,
-	['Pamamas']                   = 20,
 	['Pamtam kelp']               = 8,
 	['Pebble']                    = 1,
 	['Petrified log']             = 2150,
@@ -663,121 +657,109 @@ local renderItemListConfig = function(settingsTabHeight)
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[6].item, Config.items[6].vendor, Config.items[6].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[7].item .. '  ', Config.items[7].gil); -- Elshimo coconut (Not in Horizon)
+        imgui.InputInt(Config.items[7].item .. '          ', Config.items[7].gil); -- Elm log
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[7].item, Config.items[7].vendor, Config.items[7].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[8].item .. '          ', Config.items[8].gil); -- Elm log
+        imgui.InputInt(Config.items[8].item .. '      ', Config.items[8].gil); -- Fish scales
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[8].item, Config.items[8].vendor, Config.items[8].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[9].item .. '      ', Config.items[9].gil); -- Fish scales
+        imgui.InputInt(Config.items[9].item .. '     ', Config.items[9].gil); -- Goblin armor
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[9].item, Config.items[9].vendor, Config.items[9].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[10].item .. '     ', Config.items[10].gil); -- Goblin armor
+        imgui.InputInt(Config.items[10].item .. '      ', Config.items[10].gil); -- Goblin mail
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[10].item, Config.items[10].vendor, Config.items[10].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[11].item .. '      ', Config.items[11].gil); -- Goblin mail
+        imgui.InputInt(Config.items[11].item .. '      ', Config.items[11].gil); -- Goblin mask
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[11].item, Config.items[11].vendor, Config.items[11].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[12].item .. '      ', Config.items[12].gil); -- Goblin mask
+        imgui.InputInt(Config.items[12].item .. '  ', Config.items[12].gil); -- Hobgoblin bread
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[12].item, Config.items[12].vendor, Config.items[12].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[13].item .. '  ', Config.items[13].gil); -- Hobgoblin bread
+        imgui.InputInt(Config.items[13].item .. '    ', Config.items[13].gil); -- Hobgoblin pie
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[13].item, Config.items[13].vendor, Config.items[13].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[14].item .. '    ', Config.items[14].gil); -- Hobgoblin pie
+        imgui.InputInt(Config.items[14].item .. '         ', Config.items[14].gil); -- Jacknife
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[14].item, Config.items[14].vendor, Config.items[14].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[15].item .. '     ', Config.items[15].gil); -- Igneous rock (Not on Horizon)
+        imgui.InputInt(Config.items[15].item .. ' ', Config.items[15].gil); -- Lacquer tree log
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[15].item, Config.items[15].vendor, Config.items[15].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[16].item .. '         ', Config.items[16].gil); -- Jacknife
+        imgui.InputInt(Config.items[16].item .. '        ', Config.items[16].gil); -- Maple log
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[16].item, Config.items[16].vendor, Config.items[16].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[17].item .. ' ', Config.items[17].gil); -- Lacquer tree log
+        imgui.InputInt(Config.items[17].item .. '       ', Config.items[17].gil); -- Nebimonite
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[17].item, Config.items[17].vendor, Config.items[17].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[18].item .. '        ', Config.items[18].gil); -- Maple log
+        imgui.InputInt(Config.items[18].item .. '          ', Config.items[18].gil); -- Oxblood
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[18].item, Config.items[18].vendor, Config.items[18].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[19].item .. '       ', Config.items[19].gil); -- Nebimonite
+        imgui.InputInt(Config.items[19].item .. '      ', Config.items[19].gil); -- Pamtam kelp
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[19].item, Config.items[19].vendor, Config.items[19].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[20].item .. '          ', Config.items[20].gil); -- Oxblood
+        imgui.InputInt(Config.items[20].item .. '           ', Config.items[20].gil); -- Pebble
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[20].item, Config.items[20].vendor, Config.items[20].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[21].item .. '          ', Config.items[21].gil); -- Pamamas
+        imgui.InputInt(Config.items[21].item .. '    ', Config.items[21].gil); -- Petrified log
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[21].item, Config.items[21].vendor, Config.items[21].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[22].item .. '      ', Config.items[22].gil); -- Pamtam kelp
+        imgui.InputInt('H.Q. pugil Scls. ', Config.items[22].gil); -- Quality pugil scales
 		imgui.SameLine();
-		imgui.Checkbox(Config.items[22].item, Config.items[22].vendor, Config.items[22].item);
+		imgui.Checkbox('H.Q. pugil Scls.', Config.items[22].vendor, Config.items[22].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[23].item .. '           ', Config.items[23].gil); -- Pebble
+        imgui.InputInt(Config.items[23].item .. '     ', Config.items[23].gil); -- Pugil scales
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[23].item, Config.items[23].vendor, Config.items[23].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[24].item .. '    ', Config.items[24].gil); -- Petrified log
+        imgui.InputInt(Config.items[24].item .. '        ', Config.items[24].gil); -- Rock salt
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[24].item, Config.items[24].vendor, Config.items[24].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt('H.Q. pugil Scls. ', Config.items[25].gil); -- Quality pugil scales
+        imgui.InputInt(Config.items[25].item .. '         ', Config.items[25].gil); -- Seashell
 		imgui.SameLine();
-		imgui.Checkbox('H.Q. pugil Scls.', Config.items[25].vendor, Config.items[25].item);
+		imgui.Checkbox(Config.items[25].item, Config.items[25].vendor, Config.items[25].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[26].item .. '     ', Config.items[26].gil); -- Pugil scales
+        imgui.InputInt(Config.items[26].item .. '      ', Config.items[26].gil); -- Shall shell
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[26].item, Config.items[26].vendor, Config.items[26].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[27].item .. '        ', Config.items[27].gil); -- Rock salt (Not on Horizon)
+        imgui.InputInt(Config.items[27].item .. ' ', Config.items[27].gil); -- Titanictus shell
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[27].item, Config.items[27].vendor, Config.items[27].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[28].item .. '         ', Config.items[28].gil); -- Seashell
+        imgui.InputInt(Config.items[28].item .. '    ', Config.items[28].gil); -- Tropical clam
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[28].item, Config.items[28].vendor, Config.items[28].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[29].item .. '      ', Config.items[29].gil); -- Shall shell
+        imgui.InputInt(Config.items[29].item .. '     ', Config.items[29].gil); -- Turtle shell
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[29].item, Config.items[29].vendor, Config.items[29].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[30].item .. ' ', Config.items[30].gil); -- Titanictus shell
+        imgui.InputInt(Config.items[30].item .. '   ', Config.items[30].gil); -- Uragnite shell
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[30].item, Config.items[30].vendor, Config.items[30].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[31].item .. '    ', Config.items[31].gil); -- Tropical clam
+        imgui.InputInt(Config.items[31].item .. '     ', Config.items[31].gil); -- Vongola clam
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[31].item, Config.items[31].vendor, Config.items[31].item);
         imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[32].item .. '     ', Config.items[32].gil); -- Turtle shell
+        imgui.InputInt(Config.items[32].item .. '       ', Config.items[32].gil); -- White sand
 		imgui.SameLine();
 		imgui.Checkbox(Config.items[32].item, Config.items[32].vendor, Config.items[32].item);
-        imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[33].item .. '   ', Config.items[33].gil); -- Uragnite shell
-		imgui.SameLine();
-		imgui.Checkbox(Config.items[33].item, Config.items[33].vendor, Config.items[33].item);
-        imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[34].item .. '     ', Config.items[34].gil); -- Vongola clam
-		imgui.SameLine();
-		imgui.Checkbox(Config.items[34].item, Config.items[34].vendor, Config.items[34].item);
-        imgui.SetNextItemWidth(100);
-        imgui.InputInt(Config.items[35].item .. '       ', Config.items[35].gil); -- White sand
-		imgui.SameLine();
-		imgui.Checkbox(Config.items[35].item, Config.items[35].vendor, Config.items[35].item);
     imgui.EndChild();
 end
 
@@ -2234,9 +2216,7 @@ func.renderItemBrowser = function(clammy)
 			local aV = a.vendor[1];
 			local bV = b.vendor[1];
 			if (aV ~= bV) then return not aV; end
-			local aVal = (ITEM_STACK_SIZE[a.item] or 12) * a.gil[1];
-			local bVal = (ITEM_STACK_SIZE[b.item] or 12) * b.gil[1];
-			return aVal > bVal;
+			return a.item:lower() < b.item:lower();
 		end);
 
 		imgui.BeginChild('##browse_list', {0, 0}, false);

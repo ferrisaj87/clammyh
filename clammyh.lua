@@ -175,6 +175,18 @@ local defaultConfig = T{
 }
 Config = Settings.load(defaultConfig);
 
+-- Remove items that no longer exist on HorizonXI from any saved settings.
+do
+    local _removed = { ['Elshimo coconut']=true, ['Igneous rock']=true, ['Pamamas']=true };
+    if (Config.items ~= nil) then
+        for i = #Config.items, 1, -1 do
+            if (_removed[Config.items[i].item] == true) then
+                table.remove(Config.items, i);
+            end
+        end
+    end
+end
+
 local clammy = T{
 	bucketSize = 50,
 	relativeWeight = 50,
