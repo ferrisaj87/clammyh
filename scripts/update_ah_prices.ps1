@@ -206,6 +206,26 @@ if ($NoApi -ne $true) {
     }
   }
 }
+
+# Snapshot previous ah_net_per_unit values into ah_prices_prev.json so the
+# in-game item browser can show up/down change arrows after reloadah.
+if ($prevLookup.Count -gt 0) {
+  $prevSnap = [ordered]@{}
+  foreach ($key in ($prevLookup.Keys | Sort-Object)) {
+    $val = $prevLookup[$key]
+    if ($null -ne $val -and $null -ne $val.PSObject.Properties['ah_net_per_unit'] -and $null -ne $val.ah_net_per_unit) {
+      try { $prevSnap[$key] = [int]$val.ah_net_per_unit } catch {}
+    }
+  }
+  if ($prevSnap.Count -gt 0) {
+    $prevOutFile = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($OutFile), 'ah_prices_prev.json')
+    try {
+      $prevSnap | ConvertTo-Json -Depth 1 | Set-Content -LiteralPath $prevOutFile -Encoding UTF8
+    } catch {
+      Write-Warning "Could not write $prevOutFile`: $($_.Exception.Message)"
+    }
+  }
+}
 $headers = @{
   'Accept'        = 'application/json, text/plain, */*'
   'Authorization' = "Bearer $tok"

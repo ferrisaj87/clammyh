@@ -23,7 +23,7 @@
 addon.author   = 'Ferris (Original Designers: MathMatic/DrifterX)';
 addon.name     = 'ClammyHorizon';
 addon.desc     = 'Clamming calculator; AH: /clammyh reloadah (Chrome extension captures token automatically). reloadah token | local | unlock.';
-addon.version  = '1.9.2';
+addon.version  = '1.9.3';
 local CURRENT_VERSION = addon.version;
 
 require('common');

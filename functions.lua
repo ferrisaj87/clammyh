@@ -4,8 +4,26 @@ local ahpricing = require('ahpricing');
 local chat = require('chat');
 local imgui = require('imgui');
 local json  = require('libs.json');
+local ffi   = require('ffi');
+local d3d8  = require('d3d8');
 local func = T{};
 local colorConverter = imgui.ColorConvertU32ToFloat4;
+
+-- Arrow textures for AH price change indicator (lazy-loaded on first render).
+local _arrowTextures = nil;
+local function _loadArrowTextures()
+	local device = d3d8.get_device();
+	if (device == nil) then return nil; end
+	local imgDir = ('%saddons/clammyh/images/'):fmt(AshitaCore:GetInstallPath());
+	local function loadTex(filename)
+		local fullPath = (imgDir .. filename):gsub('/', '\\');
+		local ptr = ffi.new('IDirect3DTexture8*[1]');
+		local res = ffi.C.D3DXCreateTextureFromFileA(device, fullPath, ptr);
+		if (res ~= ffi.C.S_OK) then return nil; end
+		return d3d8.gc_safe_release(ffi.cast('IDirect3DTexture8*', ptr[0]));
+	end
+	return { up = loadTex('Up.png'), down = loadTex('Down.png') };
+end
 
 local BUCKET_COST_GIL = 500;
 
@@ -2046,13 +2064,20 @@ end
 
 -- AH price cache for item browser (lazy-loaded from ah_prices.json).
 local _browserAhCache = nil;
+-- Previous AH net-per-unit snapshot (from ah_prices_prev.json, written by update_ah_prices.ps1).
+local _browserAhPrevCache = nil;
 
 func.resetBrowserAhCache = function()
 	_browserAhCache = nil;
+	_browserAhPrevCache = nil;
 end
 
 local function _clammyAhDataPath()
 	return ('%sconfig/addons/ClammyHorizon/data/ah_prices.json'):fmt(AshitaCore:GetInstallPath());
+end
+
+local function _clammyAhPrevDataPath()
+	return ('%sconfig/addons/ClammyHorizon/data/ah_prices_prev.json'):fmt(AshitaCore:GetInstallPath());
 end
 
 local function _loadBrowserAhCache()
@@ -2072,6 +2097,22 @@ local function _loadBrowserAhCache()
 		return;
 	end
 	_browserAhCache = data.items;
+
+	-- Load previous-price snapshot for change arrows (ah_prices_prev.json).
+	local prevPath = _clammyAhPrevDataPath();
+	_browserAhPrevCache = {};
+	if (fsOk) and (ashita.fs.exists(prevPath) == true) then
+		local pf = io.open(prevPath, 'r');
+		if (pf ~= nil) then
+			local pbody = pf:read('*a'); pf:close();
+			if (pbody ~= nil) and (pbody ~= '') then
+				local pok, pdata = pcall(json.decode, pbody);
+				if (pok) and (type(pdata) == 'table') then
+					_browserAhPrevCache = pdata;
+				end
+			end
+		end
+	end
 end
 
 -- Returns a tooltip string explaining the routing decision for an item.
@@ -2211,6 +2252,18 @@ func.renderItemBrowser = function(clammy)
 			local tooltip    = _browserRouteTooltip(ahRow);
 			local dispName   = truncateItemDisplayName(citem.item, 20);
 
+			-- Price change arrow: compare current AH unit price to previous snapshot.
+			local prevUnit   = (_browserAhPrevCache ~= nil) and _browserAhPrevCache[citem.item] or nil;
+			local arrowDir   = nil;
+			local prevStack  = nil;
+			if (prevUnit ~= nil) and (ahNetUnit ~= nil) and (prevUnit > 0) then
+				local pct = 100.0 * (ahNetUnit - prevUnit) / prevUnit;
+				prevStack = prevUnit * stackSize;
+				if     (pct >  3) then arrowDir = 'up';
+				elseif (pct < -3) then arrowDir = 'down';
+				end
+			end
+
 			-- Name
 			imgui.TextColored(routeColor, dispName);
 			imgui.SameLine(); imgui.SetCursorPosX(COL_ROUTE);
@@ -2231,6 +2284,21 @@ func.renderItemBrowser = function(clammy)
 				imgui.TextColored(GOOD_COLOR, formatInt(ahStack) .. 'g');
 			else
 				imgui.TextColored(DIM_COLOR, formatInt(ahStack) .. 'g');
+			end
+			-- Price change arrow (>3% move since last reloadah)
+			if (arrowDir ~= nil) then
+				if (_arrowTextures == nil) then _arrowTextures = _loadArrowTextures(); end
+				local tex = (_arrowTextures ~= nil) and _arrowTextures[arrowDir] or nil;
+				if (tex ~= nil) then
+					imgui.SameLine(0, 3);
+					local arrowSz = math.floor(11 * sc);
+					imgui.Image(tonumber(ffi.cast('uint32_t', tex)), { arrowSz, arrowSz });
+					if (imgui.IsItemHovered()) and (prevStack ~= nil) then
+						imgui.BeginTooltip();
+						imgui.Text(('Previous value: %sg'):fmt(formatInt(prevStack)));
+						imgui.EndTooltip();
+					end
+				end
 			end
 			-- (?) tooltip hint — only when AH data exists
 			if (ahRow ~= nil) then
