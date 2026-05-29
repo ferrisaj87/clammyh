@@ -1,4 +1,5 @@
 .vscode
+.cursor
 
 # Generated at runtime -- lives in Game\config\addons\ClammyHorizon\ not in the addon folder
 data/ah_prices.json
