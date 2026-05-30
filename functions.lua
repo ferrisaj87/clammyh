@@ -420,7 +420,8 @@ local sessionTimeout = function(clammy)
 		clammy.sessionBreakLossGil = 0;
 		clammy.sessionBreakLossByItem = T{};
 	end
-	clammy.startingTime = os.clock();
+	-- NOTE: startingTime and sessionStarted are intentionally NOT reset here.
+	-- The session clock starts on the first bucket grab and runs until logout/manual reset.
 	clammy.lastClammingAction = os.clock();
 	clammy.fileName = ('log_%s.txt'):fmt(os.date('%Y_%m_%d__%H_%M_%S'));
 	clammy.fileNameBroken = ('log_broken_%s.txt'):fmt(os.date('%Y_%m_%d__%H_%M_%S'));
@@ -435,7 +436,6 @@ local sessionTimeout = function(clammy)
 	clammy.bucketAverageTime = 0;
 	clammy.bucketTimeWith = 0;
 	clammy.sessionWasReset = false;
-	clammy.sessionStarted = false;
 	return clammy;
 end
 
