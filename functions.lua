@@ -1306,14 +1306,16 @@ end
 
 local function applyHorizonHelperResultToGame()
 	local code = readClammyHelperExitCodeFile();
+	-- Always clear browser caches so the item browser re-reads from disk on next open,
+	-- regardless of whether apply succeeded (stale prev data causes phantom arrows).
+	_browserAhCache = nil;
+	_browserAhPrevCache = nil;
 	if (code == nil) or (code ~= 0) then
 		print(chat.header(addon.name):append(chat.message('Clammy: Failed to pull AH data. Check Game\\config\\addons\\ClammyHorizon\\data\\horizon_helper.log')));
 		return;
 	end
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
-		_browserAhCache = nil;
-		_browserAhPrevCache = nil;
 		print(chat.header(addon.name):append(chat.message(('Clammy: Successfully updated AH pricing (%d items).'):fmt(n))));
 		if (Config.ahPricesGeneratedUtc ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= '') then
 			print(chat.header(addon.name):append(chat.message(('Generated (UTC): %s'):fmt(Config.ahPricesGeneratedUtc[1]))));
@@ -1426,10 +1428,11 @@ func.pollHorizonBackgroundHelper = function(clammy)
 end
 
 func.logAhPricingApplyOutcome = function()
+	-- Always clear browser caches so the item browser re-reads from disk.
+	_browserAhCache = nil;
+	_browserAhPrevCache = nil;
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
-		_browserAhCache = nil;
-		_browserAhPrevCache = nil;
 		if (ahpricing.OVERRIDES_ONLY_BASE == true) then
 			print(chat.header(addon.name):append(chat.message(('AH pricing: applied %d entries (no ah_prices.json; overrides file only).'):fmt(n))));
 		else
