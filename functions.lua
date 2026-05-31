@@ -2248,8 +2248,8 @@ func.renderItemBrowser = function(clammy)
 			if (prevUnit ~= nil) and (ahNetUnit ~= nil) and (prevUnit > 0) then
 				local pct = 100.0 * (ahNetUnit - prevUnit) / prevUnit;
 				prevStack = prevUnit * stackSize;
-				if     (pct >  3) then arrowDir = 'up';
-				elseif (pct < -3) then arrowDir = 'down';
+				if     (pct >  1) then arrowDir = 'up';
+				elseif (pct < -1) then arrowDir = 'down';
 				end
 			end
 
