@@ -298,7 +298,6 @@ end);
 
 --------------------------------------------------------------------
 ashita.events.register('unload', 'unload_cb', function()
-	func.releaseArrowTextures();
 	if (Config.sessionLog[1] == true) then
 		clammy = func.writeSessionReport(clammy, 'unload');
 	end

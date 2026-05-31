@@ -4,31 +4,8 @@ local ahpricing = require('ahpricing');
 local chat = require('chat');
 local imgui = require('imgui');
 local json  = require('libs.json');
-local ffi   = require('ffi');
-local d3d8  = require('d3d8');
-require('d3d8.d3dx8');
 local func = T{};
 local colorConverter = imgui.ColorConvertU32ToFloat4;
-
--- Arrow textures for AH price change indicator (lazy-loaded on first render).
-local _arrowTextures = nil;
-local function _loadArrowTextures()
-	local ok, device = pcall(d3d8.get_device);
-	if (not ok) or (device == nil) then return nil; end
-	local imgDir = ('%saddons\\clammyh\\images\\'):fmt(AshitaCore:GetInstallPath():gsub('/', '\\'));
-	local function loadTex(filename)
-		local fullPath = imgDir .. filename;
-		local ptr = ffi.new('IDirect3DTexture8*[1]');
-		local res = ffi.C.D3DXCreateTextureFromFileA(device, fullPath, ptr);
-		if (res ~= ffi.C.S_OK) then return nil; end
-		local tex = ffi.new('IDirect3DTexture8*', ptr[0]);
-		d3d8.gc_safe_release(tex);
-		return tex;
-	end
-	local okU, up   = pcall(loadTex, 'Up.png');
-	local okD, down = pcall(loadTex, 'Down.png');
-	return { up = okU and up or nil, down = okD and down or nil };
-end
 
 local BUCKET_COST_GIL = 500;
 
@@ -1336,6 +1313,7 @@ local function applyHorizonHelperResultToGame()
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
 		_browserAhCache = nil;
+		_browserAhPrevCache = nil;
 		print(chat.header(addon.name):append(chat.message(('Clammy: Successfully updated AH pricing (%d items).'):fmt(n))));
 		if (Config.ahPricesGeneratedUtc ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= nil) and (Config.ahPricesGeneratedUtc[1] ~= '') then
 			print(chat.header(addon.name):append(chat.message(('Generated (UTC): %s'):fmt(Config.ahPricesGeneratedUtc[1]))));
@@ -1451,6 +1429,7 @@ func.logAhPricingApplyOutcome = function()
 	local n = ahpricing.applyFromFile(Config);
 	if (n > 0) then
 		_browserAhCache = nil;
+		_browserAhPrevCache = nil;
 		if (ahpricing.OVERRIDES_ONLY_BASE == true) then
 			print(chat.header(addon.name):append(chat.message(('AH pricing: applied %d entries (no ah_prices.json; overrides file only).'):fmt(n))));
 		else
@@ -2059,10 +2038,6 @@ func.resetBrowserAhCache = function()
 	_browserAhPrevCache = nil;
 end
 
-func.releaseArrowTextures = function()
-	_arrowTextures = nil;
-end
-
 local function _clammyAhDataPath()
 	return ('%sconfig/addons/ClammyHorizon/data/ah_prices.json'):fmt(AshitaCore:GetInstallPath());
 end
@@ -2097,6 +2072,8 @@ local function _loadBrowserAhCache()
 		if (pf ~= nil) then
 			local pbody = pf:read('*a'); pf:close();
 			if (pbody ~= nil) and (pbody ~= '') then
+				-- Strip any leading BOM or whitespace before the first '{'.
+				pbody = pbody:sub(pbody:find('{') or 1);
 				local pok, pdata = pcall(json.decode, pbody);
 				if (pok) and (type(pdata) == 'table') then
 					_browserAhPrevCache = pdata;
@@ -2274,19 +2251,18 @@ func.renderItemBrowser = function(clammy)
 			else
 				imgui.TextColored(DIM_COLOR, formatInt(ahStack) .. 'g');
 			end
-			-- Price change arrow (>3% move since last reloadah)
+			-- Price change arrow (>1% move since last reloadah).
 			if (arrowDir ~= nil) then
-				if (_arrowTextures == nil) then _arrowTextures = _loadArrowTextures(); end
-				local tex = (_arrowTextures ~= nil) and _arrowTextures[arrowDir] or nil;
-				if (tex ~= nil) then
-					imgui.SameLine(0, 3);
-					local arrowSz = math.floor(11 * sc);
-					imgui.Image(tonumber(ffi.cast('uint32_t', tex)), { arrowSz, arrowSz });
-					if (imgui.IsItemHovered()) and (prevStack ~= nil) then
-						imgui.BeginTooltip();
-						imgui.Text(('Previous value: %sg'):fmt(formatInt(prevStack)));
-						imgui.EndTooltip();
-					end
+				imgui.SameLine(0, 3);
+				if (arrowDir == 'up') then
+					imgui.TextColored({ 0.2, 1.0, 0.2, 1.0 }, '^');
+				else
+					imgui.TextColored({ 1.0, 0.3, 0.3, 1.0 }, 'v');
+				end
+				if (imgui.IsItemHovered()) and (prevStack ~= nil) then
+					imgui.BeginTooltip();
+					imgui.Text(('Previous value: %sg'):fmt(formatInt(prevStack)));
+					imgui.EndTooltip();
 				end
 			end
 			-- (?) tooltip hint — only when AH data exists

@@ -220,7 +220,9 @@ if ($prevLookup.Count -gt 0) {
   if ($prevSnap.Count -gt 0) {
     $prevOutFile = [System.IO.Path]::Combine([System.IO.Path]::GetDirectoryName($OutFile), 'ah_prices_prev.json')
     try {
-      $prevSnap | ConvertTo-Json -Depth 1 | Set-Content -LiteralPath $prevOutFile -Encoding UTF8
+      $prevJson = $prevSnap | ConvertTo-Json -Depth 1
+      $noBomUtf8 = New-Object System.Text.UTF8Encoding $false
+      [System.IO.File]::WriteAllText($prevOutFile, $prevJson, $noBomUtf8)
     } catch {
       Write-Warning "Could not write $prevOutFile`: $($_.Exception.Message)"
     }
